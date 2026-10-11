@@ -38,12 +38,12 @@ jobs:
       # so actions/setup-dotnet's install step fails. We rely on the .NET 6 SDK already
       # installed on this machine (on the system PATH) instead of installing a fresh copy.
       - name: Verify .NET 6 SDK is available
-        shell: pwsh
+        shell: powershell
         run: dotnet --list-sdks
 
       - name: Bump manifest version
         id: bump
-        shell: pwsh
+        shell: powershell
         run: |
           $manifestPath = "manifest.json"
           $raw = Get-Content $manifestPath -Raw
@@ -67,14 +67,14 @@ jobs:
           Add-Content -Path $env:GITHUB_OUTPUT -Value "version=$newVersion"
 
       - name: Build release
-        shell: pwsh
+        shell: powershell
         # -p:GameModsPath is pinned to this machine's game install since this runner only ever
         # runs here. Change it if the game ever moves, or delete the override to let
         # ModBuildConfig auto-detect it (works fine too, this is just belt-and-suspenders).
         run: dotnet build -c Release -p:GameModsPath="D:\steam drive\steamapps\common\Stardew Valley\Mods"
 
       - name: Commit version bump and tag
-        shell: pwsh
+        shell: powershell
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"

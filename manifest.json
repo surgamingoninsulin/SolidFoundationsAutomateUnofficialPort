@@ -7,7 +7,7 @@
   "EntryDll": "SolidFoundationsAutomate.dll",
   "MinimumApiVersion": "4.1.10",
   "MinimumGameVersion": "1.6.9",
-  "UpdateKeys": [ "GitHub:surgamingoninsulin/SolidFoundationsAutomateFork" ],
+  "UpdateKeys": [ "GitHub:surgamingoninsulin/SolidFoundationsAutomateUnofficialPort" ],
   "Dependencies": [
     {
       "UniqueID": "PeacefulEnd.SolidFoundations",

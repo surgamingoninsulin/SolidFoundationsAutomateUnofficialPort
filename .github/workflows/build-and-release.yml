@@ -1,0 +1,90 @@
+name: Build and release
+
+# IMPORTANT — why this needs a SELF-HOSTED runner:
+# Automate.dll and SolidFoundations.dll both reference Stardew Valley's own game assemblies
+# (StardewValley.dll, xTile.dll, etc.), which are proprietary game files and can't legally be
+# downloaded or bundled on a GitHub-hosted cloud runner. This workflow can only run on a
+# self-hosted runner registered from a PC that already has the game, SMAPI, Automate, and
+# Solid Foundations installed (e.g. this one).
+#
+# SECURITY — a self-hosted runner executes workflow code automatically. Only "push" is handled
+# below (no "pull_request"), so a PR from someone else can never trigger a build on your machine.
+# Keep it that way unless you fully trust everyone with push access to this repo.
+
+on:
+  push:
+    branches: [ main ]
+    paths-ignore:
+      - '.github/workflows/**'
+  workflow_dispatch: {}
+
+permissions:
+  contents: write
+
+concurrency:
+  group: build-and-release
+  cancel-in-progress: false
+
+jobs:
+  build:
+    runs-on: self-hosted
+    if: ${{ !contains(github.event.head_commit.message, '[skip ci]') }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Set up .NET 6
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '6.0.x'
+
+      - name: Bump manifest version
+        id: bump
+        shell: pwsh
+        run: |
+          $manifestPath = "manifest.json"
+          $raw = Get-Content $manifestPath -Raw
+          if ($raw -notmatch '"Version":\s*"([^"]+)"') { throw "Version field not found in $manifestPath" }
+          $version = $Matches[1]
+
+          if ($version -match '^(?<base>\d+\.\d+\.\d+)-unofficial\.(?<n>\d+)-port$') {
+            $newVersion = "$($Matches.base)-unofficial.$([int]$Matches.n + 1)-port"
+          }
+          elseif ($version -match '^(?<maj>\d+)\.(?<min>\d+)\.(?<patch>\d+)$') {
+            $newVersion = "$($Matches.maj).$($Matches.min).$([int]$Matches.patch + 1)"
+          }
+          else {
+            throw "Unrecognized version format: $version"
+          }
+
+          $newRaw = $raw -replace '"Version":\s*"[^"]+"', "`"Version`": `"$newVersion`""
+          Set-Content -Path $manifestPath -Value $newRaw -NoNewline -Encoding utf8
+
+          Write-Output "Bumped $version -> $newVersion"
+          Add-Content -Path $env:GITHUB_OUTPUT -Value "version=$newVersion"
+
+      - name: Build release
+        shell: pwsh
+        # -p:GameModsPath is pinned to this machine's game install since this runner only ever
+        # runs here. Change it if the game ever moves, or delete the override to let
+        # ModBuildConfig auto-detect it (works fine too, this is just belt-and-suspenders).
+        run: dotnet build -c Release -p:GameModsPath="D:\steam drive\steamapps\common\Stardew Valley\Mods"
+
+      - name: Commit version bump and tag
+        shell: pwsh
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add manifest.json
+          git commit -m "chore: bump version to ${{ steps.bump.outputs.version }} [skip ci]"
+          git tag "${{ steps.bump.outputs.version }}"
+          git push origin HEAD:main
+          git push origin "${{ steps.bump.outputs.version }}"
+
+      - name: Create GitHub release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ steps.bump.outputs.version }}
+          name: v${{ steps.bump.outputs.version }}
+          files: bin/Release/net6.0/*.zip

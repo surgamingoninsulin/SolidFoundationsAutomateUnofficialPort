@@ -1,0 +1,23 @@
+{
+  "Name": "Solid Foundations - Automate Integration (Unofficial 1.6 Port)",
+  "Author": "PeacefulEnd (original), unofficial port",
+  "Version": "1.0.0-unofficial.1-port",
+  "Description": "Lets Automate feed and empty Solid Foundations buildings on Stardew Valley 1.6, honouring SF's DisableAutomate and InputFilters rules.",
+  "UniqueID": "PeacefulEnd.SolidFoundationsAutomate.UnofficialPort",
+  "EntryDll": "SolidFoundationsAutomate.dll",
+  "MinimumApiVersion": "4.1.10",
+  "MinimumGameVersion": "1.6.9",
+  "UpdateKeys": [ "GitHub:surgamingoninsulin/SolidFoundationsAutomateFork" ],
+  "Dependencies": [
+    {
+      "UniqueID": "PeacefulEnd.SolidFoundations",
+      "MinimumVersion": "3.0.0",
+      "IsRequired": true
+    },
+    {
+      "UniqueID": "Pathoschild.Automate",
+      "MinimumVersion": "2.1.0",
+      "IsRequired": true
+    }
+  ]
+}

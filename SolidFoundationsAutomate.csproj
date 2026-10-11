@@ -1,0 +1,62 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!--
+    Unofficial Stardew Valley 1.6 port of "Solid Foundations - Automate Integration" (PeacefulEnd).
+
+    Build requirements (on the machine that has the game installed):
+      * .NET 6 SDK or newer
+      * Stardew Valley 1.6.9+ with SMAPI 4.1.10+
+      * Solid Foundations 3.x and Automate 2.1+ installed in the game's Mods folder
+        (this project compiles directly against their DLLs, the same way the original addon did)
+
+    Pathoschild.Stardew.ModBuildConfig locates the game folder automatically. If it can't,
+    set <GamePath> below or pass -p:GamePath="C:\path\to\Stardew Valley" to dotnet build.
+  -->
+
+  <PropertyGroup>
+    <AssemblyName>SolidFoundationsAutomate</AssemblyName>
+    <RootNamespace>SolidFoundationsAutomate</RootNamespace>
+    <Version>1.0.0</Version>
+    <TargetFramework>net6.0</TargetFramework>
+    <LangVersion>latest</LangVersion>
+    <Nullable>enable</Nullable>
+    <EnableHarmony>true</EnableHarmony>
+
+    <!-- ModBuildConfig: copy the built mod to Mods/ and create a release zip in bin/ -->
+    <EnableModDeploy>true</EnableModDeploy>
+    <EnableModZip>true</EnableModZip>
+    <ModFolderName>SolidFoundationsAutomate</ModFolderName>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Pathoschild.Stardew.ModBuildConfig" Version="4.*" />
+  </ItemGroup>
+
+  <!--
+    Automate and Solid Foundations are referenced from $(GameModsPath), which ModBuildConfig sets to the game's
+    Mods folder. It's used here (not copied into an earlier property) because ModBuildConfig defines it in its
+    .targets, after this file's properties are evaluated; item paths are evaluated last, so they see the final value.
+    Override with -p:GameModsPath="..." if your mods live elsewhere (e.g. a Stardrop profile); the built mod is
+    deployed to that same folder.
+  -->
+  <ItemGroup>
+    <!-- Private=false: never ship copies of the dependency DLLs with this mod. -->
+    <Reference Include="Automate">
+      <HintPath>$(GameModsPath)\Automate\Automate.dll</HintPath>
+      <Private>false</Private>
+    </Reference>
+    <Reference Include="SolidFoundations">
+      <HintPath>$(GameModsPath)\SolidFoundations\SolidFoundations.dll</HintPath>
+      <Private>false</Private>
+    </Reference>
+  </ItemGroup>
+
+  <!-- Fail early with a readable message instead of 200 "type not found" errors. -->
+  <Target Name="ValidateDependencyMods" BeforeTargets="ResolveAssemblyReferences">
+    <Error Condition="!Exists('$(GameModsPath)\Automate\Automate.dll')"
+           Text="Automate.dll not found at '$(GameModsPath)\Automate\'. Install Automate, or pass -p:GameModsPath=&lt;folder containing Automate and SolidFoundations&gt;." />
+    <Error Condition="!Exists('$(GameModsPath)\SolidFoundations\SolidFoundations.dll')"
+           Text="SolidFoundations.dll not found at '$(GameModsPath)\SolidFoundations\'. Install Solid Foundations 3.x, or pass -p:GameModsPath=&lt;folder containing Automate and SolidFoundations&gt;." />
+  </Target>
+
+</Project>

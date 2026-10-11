@@ -34,10 +34,12 @@ jobs:
         with:
           fetch-depth: 0
 
-      - name: Set up .NET 6
-        uses: actions/setup-dotnet@v4
-        with:
-          dotnet-version: '6.0.x'
+      # The runner service account (NETWORK SERVICE) can't write to C:\Program Files\dotnet,
+      # so actions/setup-dotnet's install step fails. We rely on the .NET 6 SDK already
+      # installed on this machine (on the system PATH) instead of installing a fresh copy.
+      - name: Verify .NET 6 SDK is available
+        shell: pwsh
+        run: dotnet --list-sdks
 
       - name: Bump manifest version
         id: bump
